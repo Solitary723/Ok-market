@@ -1,7 +1,50 @@
+import pandas as pd
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 app = FastAPI()
+
+def load_products():
+    try:
+        df = pd.read_excel("products.xlsx")
+        df = df.fillna("")
+        products = []
+        for idx, row in df.iterrows():
+            products.append({
+                "id": idx + 1,
+                "name": str(row.get("name", "Nomsiz mahsulot")),
+                "price": int(row.get("price", 0)) if str(row.get("price", "")).isdigit() else 0,
+                "stock": int(row.get("stock", 0)) if str(row.get("stock", "")).isdigit() else 0,
+                "category": str(row.get("category", "Boshqa")),
+                "image": str(row.get("image", ""))
+            })
+        return products
+    except Exception as e:
+        print("Excel o'qishda xatolik:", e)
+        return []
+
+@app.get("/manifest.json")
+async def get_manifest():
+    return JSONResponse({
+        "name": "Truzde",
+        "short_name": "Truzde",
+        "description": "Truzde onlayn do'koni",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#059669",
+        "icons": [
+            {
+                "src": "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+                "sizes": "512x512",
+                "type": "image/png"
+            }
+        ]
+    })
+
+@app.get("/api/products")
+async def get_products():
+    return load_products()
 
 html_content = """
 <!DOCTYPE html>
@@ -9,147 +52,143 @@ html_content = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OK Market - Oziq-ovqat do'koni</title>
+    <title>Truzde</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#059669">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-50 text-gray-800 pb-20">
+<body class="bg-gray-50 text-gray-800 pb-24">
 
-    <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <div class="bg-emerald-600 text-white p-2 rounded-xl font-bold text-lg">OK</div>
+            <div class="flex items-center space-x-2.5">
+                <div class="bg-emerald-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-lg">TR</div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">OK Market</h1>
-                    <p class="text-xs text-gray-500">Tezkor yetkazib berish</p>
+                    <h1 class="font-bold text-lg leading-none">Truzde</h1>
+                    <p class="text-xs text-gray-500 mt-1">Onlayn do'kon</p>
                 </div>
             </div>
-            <button onclick="openCart()" class="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl relative">
+            <button onclick="openCart()" class="bg-emerald-50 text-emerald-600 px-3.5 py-2.5 rounded-xl relative flex items-center gap-2 font-semibold text-sm">
                 <i class="fa-solid fa-cart-shopping"></i>
-                <span id="cartBadge" class="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold hidden">0</span>
+                <span id="cartBadge" class="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
             </button>
         </div>
     </header>
 
-    <main class="max-w-3xl mx-auto px-4 mt-3">
-        <!-- Qidiruv satri -->
+    <main class="max-w-3xl mx-auto px-4 mt-4">
         <div class="relative">
-            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-sm"></i>
-            <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Mahsulot va tovarlarni izlash..." class="w-full bg-gray-100 text-sm rounded-xl pl-10 pr-4 py-2.5 focus:bg-white transition">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-gray-400 text-sm"></i>
+            <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Mahsulot izlash..." class="w-full bg-white border border-gray-200 text-sm rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-emerald-500">
         </div>
 
-        <!-- Kategoriyalar -->
-        <div id="categoryBar" class="flex gap-2 overflow-x-auto no-scrollbar pb-1 mt-3">
-            <button onclick="setCategory('all', this)" class="cat-btn active bg-emerald-500 text-white px-4 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition">Barchasi</button>
-            <button onclick="setCategory('shirinlik', this)" class="cat-btn bg-gray-100 text-gray-700 px-4 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition">Shirinliklar</button>
-            <button onclick="setCategory('masalliq', this)" class="cat-btn bg-gray-100 text-gray-700 px-4 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition">Masalliqlar</button>
-            <button onclick="setCategory('ichimlik', this)" class="cat-btn bg-gray-100 text-gray-700 px-4 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition">Ichimliklar</button>
-            <button onclick="setCategory('meva', this)" class="cat-btn bg-gray-100 text-gray-700 px-4 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition">Meva-sabzavot</button>
-        </div>
+        <div id="categoryBar" class="flex gap-2 overflow-x-auto pb-2 mt-3"></div>
+        <div id="productsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3"></div>
+    </main>
 
-        <!-- Aksiya Banner -->
-        <div class="max-w-3xl mx-auto px-4 mt-4">
-            <div class="bg-gradient-to-r from-emerald-500 to-teal-400 rounded-2xl p-4 text-white shadow-md flex items-center justify-between">
-                <div>
-                    <span class="bg-white/20 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold">Yangi do'kon</span>
-                    <h2 class="text-lg font-bold mt-1">Bepul yetkazib berish!</h2>
-                    <p class="text-xs opacity-90 mt-0.5">50 000 so'mdan yuqori xaridlarga</p>
-                </div>
-                <div class="text-3xl bg-white/20 p-3 rounded-2xl">🚚</div>
-            </div>
-        </div>
-
-        <!-- Mahsulotlar ro'yxati -->
-        <div id="productsGrid" class="grid grid-cols-2 gap-3 mt-4">
-            <!-- JavaScript orqali to'ldiriladi -->
-        </div>
-    </main><!-- Savatcha tugmasi / Paneli -->
-    <div id="cartModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end">
-        <div class="bg-white w-full rounded-t-3xl p-5 max-h-[80vh] overflow-y-auto">
+    <div id="cartModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end justify-center">
+        <div class="bg-white w-full max-w-3xl rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-lg">Buyurtmangiz</h3>
-                <button onclick="closeCart()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <h3 class="font-bold text-lg">Savatcha</h3><button onclick="closeCart()" class="text-gray-400 hover:text-gray-700 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <div id="cartItems" class="space-y-3 mb-4">
-                <!-- Savatcha elementlari -->
-            </div>
+            <div id="cartItems" class="space-y-3 mb-4"></div>
             <div class="border-t pt-3 flex justify-between items-center mb-4">
                 <span class="text-gray-500 text-sm">Jami summa:</span>
-                <span id="cartTotal" class="font-bold text-lg text-emerald-600">0 so'm</span>
+                <span id="cartTotal" class="font-extrabold text-lg text-emerald-600">0 so'm</span>
             </div>
-            <button onclick="checkout()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-emerald-600/30">Buyurtmani rasmiylashtirish</button>
+            <button onclick="checkout()" class="w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold text-sm">Buyurtma berish</button>
         </div>
     </div>
 
     <script>
-        let products = [
-            { id: 1, name: "Medovik torti (1 kg)", price: 85000, category: "shirinlik", emoji: "🍯", desc: "Tabiiy asal va qaymoqli" },
-            { id: 2, name: "Shokoladli brauni", price: 24000, category: "shirinlik", emoji: "🍫", desc: "Noyob shokoladli shirinlik" },
-            { id: 3, name: "Qaymoq (400 gr)", price: 22000, category: "masalliq", emoji: "🥛", desc: "Tabiiy uy qaymog'i" },
-            { id: 4, name: "Sariyog' (200 gr)", price: 26000, category: "masalliq", emoji: "🧈", desc: "Yuqori sifatli sariyog'" },
-            { id: 5, name: "Qulupnay (1 kg)", price: 38000, category: "meva", emoji: "🍓", desc: "Yangi uzilgan shirin qulupnay" },
-            { id: 6, name: "Banan (1 kg)", price: 23000, category: "meva", emoji: "🍌", desc: "Ekvador bananlari" },
-            { id: 7, name: "Tabiiy olma sharbati 1L", price: 14000, category: "ichimlik", emoji: "🧃", desc: "100% tabiiy olma sharbati" },
-            { id: 8, name: "Gazsiz suv 1.5L", price: 4000, category: "ichimlik", emoji: "💧", desc: "Tog' buloq suvi" }
-        ];
-
+        let products = [];
         let cart = {};
         let currentCategory = 'all';
+
+        async function init() {
+            const res = await fetch('/api/products');
+            products = await res.json();
+            renderCategories();
+            filterProducts();
+        }
 
         function formatPrice(num) {
             return num.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, " ") + " so'm";
         }
 
-        function renderProducts(items) {
-            const grid = document.getElementById('productsGrid');
-            grid.innerHTML = '';
-            items.forEach(p => {
-                grid.innerHTML += 
-                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
-                        <div>
-                            <div class="text-3xl mb-2 bg-gray-50 p-3 rounded-xl text-center">${p.emoji}</div>
-                            <h4 class="font-bold text-sm leading-tight">${p.name}</h4>
-                            <p class="text-xs text-gray-400 mt-1">${p.desc}</p>
-                        </div>
-                        <div class="mt-4 flex items-center justify-between">
-                            <span class="font-extrabold text-sm text-emerald-600">${formatPrice(p.price)}</span>
-                            <button onclick="addToCart(${p.id})" class="bg-emerald-50 text-emerald-600 w-8 h-8 rounded-xl flex items-center justify-center font-bold hover:bg-emerald-600 hover:text-white transition">+</button>
-                        </div>
-                    </div>
-                ;
-            });
+        function renderCategories() {
+            const bar = document.getElementById('categoryBar');
+            const cats = ['all', ...new Set(products.map(p => p.category).filter(Boolean))];
+            bar.innerHTML = cats.map(c => {
+                const label = c === 'all' ? 'Barchasi' : c;
+                const activeClass = c === currentCategory ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 border border-gray-200';
+                return <button onclick="setCategory('${c}')" class="${activeClass} px-4 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition">${label}</button>;
+            }).join('');
         }
 
-        function setCategory(cat, btn) {
+        function setCategory(cat) {
             currentCategory = cat;
-            document.querySelectorAll('.cat-btn').forEach(b => {
-                b.classList.remove('bg-emerald-500', 'text-white');
-                b.classList.add('bg-gray-100', 'text-gray-700');
-            });
-            btn.classList.remove('bg-gray-100', 'text-gray-700');
-            btn.classList.add('bg-emerald-500', 'text-white');
+            renderCategories();
             filterProducts();
-        }function filterProducts() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
+        }
+
+        function filterProducts() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
             const filtered = products.filter(p => {
-                const matchesCat = currentCategory === 'all' || p.category === currentCategory;
-                const matchesQuery = p.name.toLowerCase().includes(query);
-                return matchesCat && matchesQuery;
+                const matchCat = currentCategory === 'all' || p.category === currentCategory;
+                const matchName = p.name.toLowerCase().includes(q);
+                return matchCat && matchName;
             });
             renderProducts(filtered);
         }
 
+        function renderProducts(items) {
+            const grid = document.getElementById('productsGrid');
+            if (items.length === 0) {
+                grid.innerHTML = '<p class="col-span-full text-center text-gray-400 py-10 text-sm">Mahsulot topilmadi</p>';
+                return;
+            }
+            grid.innerHTML = items.map(p => {
+                const isOutOfStock = p.stock <= 0;
+                const imgHtml = p.image 
+                    ? <img src="${p.image}" alt="${p.name}" class="w-full h-28 object-cover rounded-xl mb-2 bg-gray-100">
+                    : <div class="w-full h-28 bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 text-xs">Rasm yo'q</div>;
+                
+                const btnHtml = isOutOfStock
+                    ? <span class="text-xs font-semibold text-red-500 bg-red-50 px-2.5 py-1.5 rounded-lg">Tugagan</span>
+                    : <button onclick="addToCart(${p.id})" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold transition">+</button>;
+
+                return `
+                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between ${isOutOfStock ? 'opacity-70' : ''}">
+                        <div>
+                            ${imgHtml}
+                            <h4 class="font-bold text-sm leading-snug line-clamp-2">${p.name}</h4><p class="text-[11px] text-gray-400 mt-1">Qoldiq: ${p.stock} ta/kg</p>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between">
+                            <span class="font-extrabold text-sm text-emerald-600">${formatPrice(p.price)}</span>
+                            ${btnHtml}
+                        </div>
+                    </div>
+                ;
+            }).join('');
+        }
+
         function addToCart(id) {
-            cart[id] = (cart[id] || 0) + 1;
+            const p = products.find(item => item.id === id);
+            const currentQty = cart[id] || 0;
+            if (currentQty >= p.stock) {
+                alert(Kechirasiz, "${p.name}" omborda atigi ${p.stock} ta/kg qolgan!);
+                return;
+            }
+            cart[id] = currentQty + 1;
             updateCartUI();
         }
 
         function updateCartUI() {
             const badge = document.getElementById('cartBadge');
-            const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
-            if (totalItems > 0) {
-                badge.innerText = totalItems;
+            const total = Object.values(cart).reduce((a, b) => a + b, 0);
+            if (total > 0) {
+                badge.innerText = total;
                 badge.classList.remove('hidden');
             } else {
                 badge.classList.add('hidden');
@@ -157,7 +196,6 @@ html_content = """
         }
 
         function openCart() {
-            const modal = document.getElementById('cartModal');
             const container = document.getElementById('cartItems');
             const totalEl = document.getElementById('cartTotal');
             container.innerHTML = '';
@@ -183,7 +221,7 @@ html_content = """
                 }
             }
             totalEl.innerText = formatPrice(total);
-            modal.classList.remove('hidden');
+            document.getElementById('cartModal').classList.remove('hidden');
         }
 
         function closeCart() {
@@ -191,20 +229,27 @@ html_content = """
         }
 
         function changeQty(id, delta) {
-            cart[id] = (cart[id] || 0) + delta;
+            const p = products.find(item => item.id == id);
+            const newQty = (cart[id] || 0) + delta;
+            if (newQty > p.stock) {
+                alert(Omborda atigi ${p.stock} ta/kg mavjud!`);
+                return;
+            }
+            cart[id] = newQty;
             if (cart[id] <= 0) delete cart[id];
             openCart();
             updateCartUI();
         }
 
         function checkout() {
-            alert("Buyurtmangiz qabul qilindi! Tez orada siz bilan bog'lanamiz.");
+            if (Object.keys(cart).length === 0) return;
+            alert("Buyurtmangiz qabul qilindi! Tez orada bog'lanamiz.");
             cart = {};
             closeCart();
             updateCartUI();
         }
 
-        renderProducts(products);
+        init();
     </script>
 </body>
 </html>
