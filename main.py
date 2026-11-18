@@ -1,4 +1,4 @@
-[18.11.2026 20:37] Rahima Normurodova: from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 app = FastAPI()
@@ -87,8 +87,7 @@ def read_root():
             } catch (e) {
                 console.error("Xato:", e);
             }
-        }
-[18.11.2026 20:37] Rahima Normurodova: function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm"; }
+        }function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm"; }
         
         function renderCategories() {
             const bar = document.getElementById('categoryBar');
