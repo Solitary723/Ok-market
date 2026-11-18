@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+[18.11.2026 20:37] Rahima Normurodova: from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 app = FastAPI()
@@ -53,7 +53,7 @@ def read_root():
                 <span id="cartBadge" class="bg-emerald-600 text-white text-[10px] px-1.5 py-0.2 rounded-full hidden absolute -top-1 -right-1">0</span>
             </button>
         </div>
-        <div id="categoryBar" class="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-none"></div>
+        <div id="categoryBar" class="flex gap-2 overflow-x-auto px-4 pb-3"></div>
     </header>
 
     <main class="max-w-md mx-auto px-3 mt-3">
@@ -83,21 +83,26 @@ def read_root():
                 let res = await fetch('/api/products');
                 products = await res.json();
                 renderCategories();
-                filterProducts();
+                renderProducts(products);
             } catch (e) {
                 console.error("Xato:", e);
             }
-        }function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm"; }
+        }
+[18.11.2026 20:37] Rahima Normurodova: function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm"; }
         
         function renderCategories() {
             const bar = document.getElementById('categoryBar');
             const cats = ['Barchasi', ...new Set(products.map(p => p.category).filter(Boolean))];
             bar.innerHTML = cats.map(c => 
-                <button onclick="setCategory('${c}')" class="${c === currentCategory ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 border border-gray-200'} px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shadow-xs">${c}</button>
+                <button onclick="setCategory('${c}')" class="${c === currentCategory ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 border border-gray-200'} px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap">${c}</button>
             ).join('');
         }
         
-        function setCategory(c) { currentCategory = c; renderCategories(); filterProducts(); }
+        function setCategory(c) { 
+            currentCategory = c; 
+            renderCategories(); 
+            filterProducts(); 
+        }
         
         function filterProducts() {
             const q = document.getElementById('searchInput').value.toLowerCase();
@@ -107,29 +112,28 @@ def read_root():
         
         function renderProducts(items) {
             const grid = document.getElementById('productsGrid');
-            if (!items.length) {
+            if (!items || !items.length) {
                 grid.innerHTML = '<div class="col-span-2 text-center py-16 text-gray-400 text-xs">Mahsulotlar topilmadi</div>';
                 return;
             }
             grid.innerHTML = items.map(p => 
-                <div class="bg-white p-2.5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between">
+                <div class="bg-white p-2.5 rounded-2xl border border-gray-100 flex flex-col justify-between">
                     <div>
-                        ${p.image ? <img src="${p.image}" class="w-full h-32 object-cover rounded-xl mb-2"> : <div class="w-full h-32 bg-gray-50 rounded-xl mb-2 flex items-center justify-center text-gray-300 text-xs"><i class="fa-solid fa-image text-xl"></i></div>}
-                        <h4 class="font-medium text-xs text-gray-800 line-clamp-2 h-8">${p.name}</h4>
+                        <img src="${p.image}" class="w-full h-32 object-cover rounded-xl mb-2">
+                        <h4 class="font-medium text-xs text-gray-800 line-clamp-2">${p.name}</h4>
                     </div>
                     <div class="mt-2">
                         <div class="font-black text-xs text-emerald-700 mb-2">${fmt(p.price)}</div>
-                        ${p.stock <= 0 ? '<span class="text-[10px] text-red-500 font-semibold">Tugagan</span>' : <button onclick="addToCart(${p.id})" class="w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white py-1.5 rounded-xl text-xs font-bold transition">Savatga</button>}
+                        <button onclick="addToCart(${p.id})" class="w-full bg-emerald-50 text-emerald-700 py-1.5 rounded-xl text-xs font-bold">Savatga</button>
                     </div>
                 </div>
             ).join('');
         }
         
         function addToCart(id) {
-            const p = products.find(i => i.id === id);
-            if ((cart[id] || 0) >= p.stock) { alert('Omborda yetarli miqdor yo‘q!'); return; }
             cart[id] = (cart[id] || 0) + 1;
             updateCart();
+            alert('Savatga qo\'shildi!');
         }
         
         function updateCart() {
@@ -144,18 +148,13 @@ def read_root():
             for (let id in cart) {
                 const p = products.find(i => i.id == id);
                 sum += p.price * cart[id];
-                c.innerHTML += <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl"><div><h4 class="font-bold text-xs">${p.name}</h4><p class="text-[11px] text-gray-500">${fmt(p.price)} x ${cart[id]}</p></div><div class="flex items-center gap-2"><button onclick="ch(${id},-1)" class="bg-gray-200 w-6 h-6 rounded-lg text-xs font-bold">-</button><span class="text-xs font-bold">${cart[id]}</span><button onclick="ch(${id},1)" class="bg-emerald-600 text-white w-6 h-6 rounded-lg text-xs font-bold">+</button></div></div>;}
+                c.innerHTML += <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl"><div><h4 class="font-bold text-xs">${p.name}</h4><p class="text-[11px] text-gray-500">${fmt(p.price)} x ${cart[id]}</p></div></div>;
+            }
             document.getElementById('cartTotal').innerText = fmt(sum);
             document.getElementById('cartModal').classList.remove('hidden');
         }
         
         function closeCart() { document.getElementById('cartModal').classList.add('hidden'); }
-        
-        function ch(id, d) {
-            cart[id] = (cart[id] || 0) + d;
-            if (cart[id] <= 0) delete cart[id];
-            openCart(); updateCart();
-        }
         
         function checkout() { 
             alert('Buyurtmangiz qabul qilindi!'); 
@@ -163,8 +162,8 @@ def read_root():
             closeCart(); 
             updateCart(); 
         }
-        
-        init();
+
+        window.onload = init;
     </script>
 </body>
 </html>
