@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "name": "Olma Qizil",
+        "price": 20000,
+        "stock": 25,
+        "category": "Mevalar",
+        "image": "https://images.unsplash.com/photo-1560806887-1e4cd06bcd67?w=400"
+    },
+    {
+        "id": 2,
+        "name": "Non",
+        "price": 4000,
+        "stock": 50,
+        "category": "Non mahsulotlari",
+        "image": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400"
+    }
+]
