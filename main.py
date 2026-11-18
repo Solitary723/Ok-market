@@ -12,7 +12,7 @@ def load_products():
         for idx, row in df.iterrows():
             products.append({
                 "id": idx + 1,
-                "name": str(row.get("name", "Nomsiz")),
+                "name": str(row.get("name", "Nomsiz mahsulot")),
                 "price": int(row.get("price", 0)) if str(row.get("price", "")).isdigit() else 0,
                 "stock": int(row.get("stock", 0)) if str(row.get("stock", "")).isdigit() else 0,
                 "category": str(row.get("category", "Boshqa")),
@@ -20,7 +20,7 @@ def load_products():
             })
         return products
     except Exception as e:
-        print("Xatolik:", e)
+        print("Excel o'qishda xatolik:", e)
         return []
 
 @app.get("/manifest.json")
@@ -30,7 +30,7 @@ async def get_manifest():
         "short_name": "Truzde",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#ffffff",
+        "background_color": "#f3f4f6",
         "theme_color": "#059669",
         "icons": [{
             "src": "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
@@ -56,103 +56,143 @@ async def read_root():
     <meta name="theme-color" content="#059669">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .brand-tr { color: #00824b; }
+        .brand-de { color: #047857; }
+        .bg-brand { background-color: #00824b; }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-800 pb-24">
+<body class="bg-gray-100 text-gray-900 pb-28">
+    <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <div class="bg-emerald-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-extrabold">TR</div>
-                <h1 class="font-bold text-lg">Truzde</h1>
+        <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-1.5">
+                <span class="text-xl font-black brand-tr">Tr</span>
+                <span class="text-xl font-bold brand-de">de</span>
             </div>
-            <button onclick="openCart()" class="bg-emerald-50 text-emerald-600 px-3 py-2 rounded-xl relative font-semibold text-sm">
-                <i class="fa-solid fa-cart-shopping"></i>
-                <span id="cartBadge" class="bg-emerald-600 text-white text-xs px-1.5 py-0.5 rounded-full hidden absolute -top-1 -right-1">0</span>
+            <div class="flex-1 mx-3">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"></i>
+                    <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Mahsulotlarni qidirish..." class="w-full bg-gray-100 text-xs rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:bg-white focus:ring-1 focus:ring-emerald-600">
+                </div>
+            </div>
+            <button onclick="openCart()" class="bg-emerald-50 text-emerald-700 w-9 h-9 rounded-xl relative flex items-center justify-center font-bold">
+                <i class="fa-solid fa-cart-shopping text-sm"></i>
+                <span id="cartBadge" class="bg-emerald-600 text-white text-[10px] px-1.5 py-0.2 rounded-full hidden absolute -top-1 -right-1">0</span>
             </button>
         </div>
+        <div id="categoryBar" class="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-none"></div>
     </header>
-    <main class="max-w-3xl mx-auto px-4 mt-4">
-        <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Mahsulot izlash..." class="w-full bg-white border border-gray-200 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500">
-        <div id="categoryBar" class="flex gap-2 overflow-x-auto pb-2 mt-3"></div>
-        <div id="productsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3"></div>
+
+    <!-- Main Content -->
+    <main class="max-w-md mx-auto px-3 mt-3">
+        <div id="productsGrid" class="grid grid-cols-2 gap-2.5"></div>
     </main>
+
+    <!-- Cart Modal -->
     <div id="cartModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end justify-center">
-        <div class="bg-white w-full max-w-3xl rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-bold text-lg">Savatcha</h3>
-                <button onclick="closeCart()" class="text-gray-400 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <div class="bg-white w-full max-w-md rounded-t-3xl p-4 max-h-[85vh] overflow-y-auto"><div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-base">Savatcha</h3>
+                <button onclick="closeCart()" class="text-gray-400 text-lg"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="cartItems" class="space-y-3 mb-4"></div>
             <div class="border-t pt-3 flex justify-between items-center mb-4">
-                <span class="text-gray-500 text-sm">Jami:</span><span id="cartTotal" class="font-extrabold text-lg text-emerald-600">0 so'm</span>
+                <span class="text-gray-500 text-sm">Jami summa:</span>
+                <span id="cartTotal" class="font-black text-base text-emerald-700">0 so'm</span>
             </div>
-            <button onclick="checkout()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold">Buyurtma berish</button>
+            <button onclick="checkout()" class="w-full bg-brand text-white py-3 rounded-xl font-bold text-sm shadow-md">Buyurtma berish</button>
         </div>
     </div>
+
     <script>
-        let products = [], cart = {}, currentCategory = 'all';
+        let products = [], cart = {}, currentCategory = 'Barchasi';
         async function init() {
-            const res = await fetch('/api/products');
-            products = await res.json();
-            renderCategories();
-            filterProducts();
+            try {
+                const res = await fetch('/api/products');
+                products = await res.json();
+                renderCategories();
+                filterProducts();
+            } catch (e) {
+                console.error("Xatolik:", e);
+            }
         }
         function fmt(n) { return n.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, " ") + " so'm"; }
+        
         function renderCategories() {
             const bar = document.getElementById('categoryBar');
-            const cats = ['all', ...new Set(products.map(p => p.category).filter(Boolean))];
-            bar.innerHTML = cats.map(c => <button onclick="setCategory('${c}')" class="${c === currentCategory ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 border'} px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap">${c === 'all' ? 'Barchasi' : c}</button>).join('');
+            const cats = ['Barchasi', ...new Set(products.map(p => p.category).filter(Boolean))];
+            bar.innerHTML = cats.map(c => 
+                <button onclick="setCategory('${c}')" class="${c === currentCategory ? 'bg-emerald-600 text-white' : 'bg-white text-gray-700 border border-gray-200'} px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shadow-xs">${c}</button>
+            ).join('');
         }
+        
         function setCategory(c) { currentCategory = c; renderCategories(); filterProducts(); }
+        
         function filterProducts() {
             const q = document.getElementById('searchInput').value.toLowerCase();
-            renderProducts(products.filter(p => (currentCategory === 'all' || p.category === currentCategory) && p.name.toLowerCase().includes(q)));
+            const filtered = products.filter(p => (currentCategory === 'Barchasi' || p.category === currentCategory) && p.name.toLowerCase().includes(q));
+            renderProducts(filtered);
         }
+        
         function renderProducts(items) {
             const grid = document.getElementById('productsGrid');
-            if (!items.length) { grid.innerHTML = '<p class="col-span-full text-center text-gray-400 py-10 text-sm">Topilmadi</p>'; return; }
+            if (!items.length) {
+                grid.innerHTML = '<div class="col-span-2 text-center py-16 text-gray-400 text-xs">Mahsulotlar topilmadi yoki Excel fayli bo‘sh</div>';
+                return;
+            }
             grid.innerHTML = items.map(p => 
-                <div class="bg-white p-3 rounded-2xl shadow-sm border flex flex-col justify-between ${p.stock <= 0 ? 'opacity-70' : ''}">
+                <div class="bg-white p-2.5 rounded-2xl shadow-xs border border-gray-100 flex flex-col justify-between">
                     <div>
-                        ${p.image ? <img src="${p.image}" class="w-full h-28 object-cover rounded-xl mb-2"> : <div class="w-full h-28 bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 text-xs">Rasm yo'q</div>}
-                        <h4 class="font-bold text-sm line-clamp-2">${p.name}</h4>
-                        <p class="text-[11px] text-gray-400 mt-1">Qoldiq: ${p.stock}</p>
+                        ${p.image ? <img src="${p.image}" class="w-full h-32 object-cover rounded-xl mb-2"> : <div class="w-full h-32 bg-gray-50 rounded-xl mb-2 flex items-center justify-center text-gray-300 text-xs"><i class="fa-solid fa-image text-xl"></i></div>}
+                        <h4 class="font-medium text-xs text-gray-800 line-clamp-2 h-8">${p.name}</h4>
                     </div>
-                    <div class="mt-3 flex items-center justify-between">
-                        <span class="font-extrabold text-sm text-emerald-600">${fmt(p.price)}</span>
-                        ${p.stock <= 0 ? '<span class="text-xs text-red-500 font-semibold">Tugagan</span>' : <button onclick="addToCart(${p.id})" class="bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white w-8 h-8 rounded-xl font-bold flex items-center justify-center">+</button>}
+                    <div class="mt-2">
+                        <div class="font-black text-xs text-emerald-700 mb-2">${fmt(p.price)}</div>
+                        ${p.stock <= 0 ? '<span class="text-[10px] text-red-500 font-semibold">Tugagan</span>' : <button onclick="addToCart(${p.id})" class="w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white py-1.5 rounded-xl text-xs font-bold transition">Savatga</button>}
                     </div>
                 </div>
             ).join('');
         }
+        
         function addToCart(id) {
             const p = products.find(i => i.id === id);
-            if ((cart[id] || 0) >= p.stock) { alert('Omborda yetarli emas!'); return; }
-            cart[id] = (cart[id] || 0) + 1;
+            if ((cart[id] || 0) >= p.stock) { alert('Omborda yetarli miqdor yo‘q!'); return; }cart[id] = (cart[id] || 0) + 1;
             updateCart();
         }
+        
         function updateCart() {
             const total = Object.values(cart).reduce((a, b) => a + b, 0);
             const b = document.getElementById('cartBadge');
             b.innerText = total;
             total > 0 ? b.classList.remove('hidden') : b.classList.add('hidden');
         }
+        
         function openCart() {
             const c = document.getElementById('cartItems'); c.innerHTML = ''; let sum = 0;
             for (let id in cart) {
                 const p = products.find(i => i.id == id);
                 sum += p.price * cart[id];
-                c.innerHTML += `<div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl"><div><h4 class="font-bold text-sm">${p.name}</h4><p class="text-xs text-gray-500">${fmt(p.price)} x ${cart[id]}</p></div><div class="flex items-center gap-2"><button onclick="ch(${id},-1)" class="bg-gray-200w-7 h-7 rounded-lg font-bold">-</button><span class="text-sm font-bold">${cart[id]}</span><button onclick="ch(${id},1)" class="bg-emerald-600 text-white w-7 h-7 rounded-lg font-bold">+</button></div></div>`;
+                c.innerHTML += <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl"><div><h4 class="font-bold text-xs">${p.name}</h4><p class="text-[11px] text-gray-500">${fmt(p.price)} x ${cart[id]}</p></div><div class="flex items-center gap-2"><button onclick="ch(${id},-1)" class="bg-gray-200 w-6 h-6 rounded-lg text-xs font-bold">-</button><span class="text-xs font-bold">${cart[id]}</span><button onclick="ch(${id},1)" class="bg-emerald-600 text-white w-6 h-6 rounded-lg text-xs font-bold">+</button></div></div>;
             }
             document.getElementById('cartTotal').innerText = fmt(sum);
             document.getElementById('cartModal').classList.remove('hidden');
         }
+        
         function closeCart() { document.getElementById('cartModal').classList.add('hidden'); }
+        
         function ch(id, d) {
             cart[id] = (cart[id] || 0) + d;
             if (cart[id] <= 0) delete cart[id];
             openCart(); updateCart();
         }
-        function checkout() { alert('Buyurtma qabul qilindi!'); cart = {}; closeCart(); updateCart(); }
+        
+        function checkout() { 
+            alert('Buyurtmangiz qabul qilindi!'); 
+            cart = {}; 
+            closeCart(); 
+            updateCart(); 
+        }
+        
         init();
     </script>
 </body>
