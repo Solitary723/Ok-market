@@ -1,22 +1,31 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+import json
+import os
 
 app = FastAPI()
 
-PRODUCTS = [
-    {
-        "id": 1,
-        "name": "Olma Qizil",
-        "price": 20000,
-        "stock": 25,
-        "category": "Mevalar",
-        "image": "https://images.unsplash.com/photo-1560806887-1e4cd06bcd67?w=400"
-    }
-]
+def load_json_products():
+    if os.path.exists("products.json"):
+        try:
+            with open("products.json", "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            pass
+    return [
+        {
+            "id": 1,
+            "name": "Olma Qizil",
+            "price": 20000,
+            "stock": 25,
+            "category": "Mevalar",
+            "image": "https://images.unsplash.com/photo-1560806887-1e4cd06bcd67?w=400"
+        }
+    ]
 
 @app.get("/api/products")
 def get_products():
-    return PRODUCTS
+    return load_json_products()
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
@@ -76,9 +85,7 @@ def read_root():
     </div>
 
     <script>
-        let products = [], cart = {}, currentCategory = 'Barchasi';
-        
-        async function init() {
+        let products = [], cart = {}, currentCategory = 'Barchasi';async function init() {
             try {
                 let res = await fetch('/api/products');
                 products = await res.json();
@@ -87,7 +94,9 @@ def read_root():
             } catch (e) {
                 console.error("Xato:", e);
             }
-        }function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm"; }
+        }
+
+        function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm"; }
         
         function renderCategories() {
             const bar = document.getElementById('categoryBar');
