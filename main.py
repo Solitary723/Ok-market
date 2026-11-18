@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 
@@ -20,7 +20,7 @@ def get_products():
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
-    return """
+    return r"""
 <!DOCTYPE html>
 <html lang="uz">
 <head>
@@ -87,7 +87,7 @@ def read_root():
             } catch (e) {
                 console.error("Xato:", e);
             }
-        }function fmt(n) { return n.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, " ") + " so'm"; }
+        }function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm"; }
         
         function renderCategories() {
             const bar = document.getElementById('categoryBar');
@@ -149,7 +149,7 @@ def read_root():
             document.getElementById('cartModal').classList.remove('hidden');
         }
         
-        function closeCart() { document.getElementById('cartModal').classList.remove('hidden'); }
+        function closeCart() { document.getElementById('cartModal').classList.add('hidden'); }
         
         function ch(id, d) {
             cart[id] = (cart[id] || 0) + d;
