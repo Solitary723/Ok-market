@@ -3,7 +3,6 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 app = FastAPI()
 
-# Mahsulotlar ro'yxati to'g'ridan-to'g'ri shu yerda turadi
 PRODUCTS = [
     {
         "id": 1,
@@ -133,11 +132,11 @@ def read_root():
             updateCart();
         }
         
-        let cartBadge = document.getElementById('cartBadge');
         function updateCart() {
             const total = Object.values(cart).reduce((a, b) => a + b, 0);
-            cartBadge.innerText = total;
-            total > 0 ? cartBadge.classList.remove('hidden') : cartBadge.classList.add('hidden');
+            const b = document.getElementById('cartBadge');
+            b.innerText = total;
+            total > 0 ? b.classList.remove('hidden') : b.classList.add('hidden');
         }
         
         function openCart() {
@@ -150,7 +149,7 @@ def read_root():
             document.getElementById('cartModal').classList.remove('hidden');
         }
         
-        function closeCart() { document.getElementById('cartModal'].classList.add('hidden'); }
+        function closeCart() { document.getElementById('cartModal').classList.remove('hidden'); }
         
         function ch(id, d) {
             cart[id] = (cart[id] || 0) + d;
