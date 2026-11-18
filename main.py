@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 import json
 import os
 
@@ -27,6 +27,7 @@ def load_json_products():
 def get_products():
     return load_json_products()
 
+@app.head("/")
 @app.get("/", response_class=HTMLResponse)
 def read_root():
     return r"""
