@@ -30,7 +30,8 @@ def get_products():
 @app.head("/")
 @app.get("/", response_class=HTMLResponse)
 def read_root():
-    return r"""
+    products_json = json.dumps(load_json_products(), ensure_ascii=False)
+    html = """
 <!DOCTYPE html>
 <html lang="uz">
 <head>
@@ -86,18 +87,8 @@ def read_root():
     </div>
 
     <script>
-        let products = [], cart = {}, currentCategory = 'Barchasi';async function init() {
-            try {
-                let res = await fetch('https://ok-market.onrender.com/api/products');
-                products = await res.json();
-                renderCategories();
-                renderProducts(products);
-            } catch (e) {
-                console.error("Xato:", e);
-            }
-        }
-
-        function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm"; }
+        let products = PRODUCTS_DATA;
+        let cart = {}, currentCategory = 'Barchasi';function fmt(n) { return n.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, " ") + " so'm"; }
         
         function renderCategories() {
             const bar = document.getElementById('categoryBar');
@@ -142,7 +133,7 @@ def read_root():
         function addToCart(id) {
             cart[id] = (cart[id] || 0) + 1;
             updateCart();
-            alert('Savatga qo\'shildi!');
+            alert('Savatga qo\\'shildi!');
         }
         
         function updateCart() {
@@ -172,8 +163,10 @@ def read_root():
             updateCart(); 
         }
 
-        window.onload = init;
+        renderCategories();
+        renderProducts(products);
     </script>
 </body>
 </html>
     """
+    return html.replace("PRODUCTS_DATA", products_json)
