@@ -4,9 +4,16 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 app = FastAPI()
 
+
 def load_products():
     try:
-        df = pd.read_excel("products.xlsx")
+        # Fayl yo'lini aniq ko'rsatamiz
+        file_path = "products.xlsx"
+        if not os.path.exists(file_path):
+            print("Excel fayl topilmadi!")
+            return []
+            
+        df = pd.read_excel(file_path)
         df = df.fillna("")
         products = []
         for idx, row in df.iterrows():
@@ -19,6 +26,9 @@ def load_products():
                 "image": str(row.get("image", ""))
             })
         return products
+    except Exception as e:
+        print("Excel o'qishda xatolik:", e)
+        return []
     except Exception as e:
         print("Excel o'qishda xatolik:", e)
         return []
