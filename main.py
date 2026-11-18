@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 import json
 import os
 
@@ -88,7 +88,7 @@ def read_root():
     <script>
         let products = [], cart = {}, currentCategory = 'Barchasi';async function init() {
             try {
-                let res = await fetch('/api/products');
+                let res = await fetch('https://ok-market.onrender.com/api/products');
                 products = await res.json();
                 renderCategories();
                 renderProducts(products);
