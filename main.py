@@ -1,34 +1,23 @@
-import os
-import pandas as pd
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 
 app = FastAPI()
 
-def load_products():
-    try:
-        if not os.path.exists("products.xlsx"):
-            return []
-        df = pd.read_excel("products.xlsx")
-        df = df.fillna("")
-        products = []
-        for idx, row in df.iterrows():
-            products.append({
-                "id": idx + 1,
-                "name": str(row.get("name", "Nomsiz")),
-                "price": int(row.get("price", 0)) if str(row.get("price", "")).isdigit() else 0,
-                "stock": int(row.get("stock", 0)) if str(row.get("stock", "")).isdigit() else 0,
-                "category": str(row.get("category", "Boshqa")),
-                "image": str(row.get("image", ""))
-            })
-        return products
-    except Exception as e:
-        print("Xatolik:", e)
-        return []
+# Mahsulotlar ro'yxati to'g'ridan-to'g'ri shu yerda turadi
+PRODUCTS = [
+    {
+        "id": 1,
+        "name": "Olma Qizil",
+        "price": 20000,
+        "stock": 25,
+        "category": "Mevalar",
+        "image": "https://images.unsplash.com/photo-1560806887-1e4cd06bcd67?w=400"
+    }
+]
 
 @app.get("/api/products")
 def get_products():
-    return load_products()
+    return PRODUCTS
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
@@ -85,7 +74,9 @@ def read_root():
             </div>
             <button onclick="checkout()" class="w-full bg-brand text-white py-3 rounded-xl font-bold text-sm shadow-md">Buyurtma berish</button>
         </div>
-    </div><script>
+    </div>
+
+    <script>
         let products = [], cart = {}, currentCategory = 'Barchasi';
         
         async function init() {
@@ -97,9 +88,7 @@ def read_root():
             } catch (e) {
                 console.error("Xato:", e);
             }
-        }
-
-        function fmt(n) { return n.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, " ") + " so'm"; }
+        }function fmt(n) { return n.toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, " ") + " so'm"; }
         
         function renderCategories() {
             const bar = document.getElementById('categoryBar');
@@ -144,11 +133,11 @@ def read_root():
             updateCart();
         }
         
+        let cartBadge = document.getElementById('cartBadge');
         function updateCart() {
             const total = Object.values(cart).reduce((a, b) => a + b, 0);
-            const b = document.getElementById('cartBadge');
-            b.innerText = total;
-            total > 0 ? b.classList.remove('hidden') : b.classList.add('hidden');
+            cartBadge.innerText = total;
+            total > 0 ? cartBadge.classList.remove('hidden') : cartBadge.classList.add('hidden');
         }
         
         function openCart() {
@@ -156,13 +145,12 @@ def read_root():
             for (let id in cart) {
                 const p = products.find(i => i.id == id);
                 sum += p.price * cart[id];
-                c.innerHTML += `<div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl"><div><h4 class="font-bold text-xs">${p.name}</h4><p class="text-[11px] text-gray-500">${fmt(p.price)} x ${cart[id]}</p></div><div class="flex items-center gap-2"><button onclick="ch(${id},-1)" class="bg-gray-200 w-6 h-6 rounded-lg text-xsfont-bold">-</button><span class="text-xs font-bold">${cart[id]}</span><button onclick="ch(${id},1)" class="bg-emerald-600 text-white w-6 h-6 rounded-lg text-xs font-bold">+</button></div></div>`;
-            }
+                c.innerHTML += <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl"><div><h4 class="font-bold text-xs">${p.name}</h4><p class="text-[11px] text-gray-500">${fmt(p.price)} x ${cart[id]}</p></div><div class="flex items-center gap-2"><button onclick="ch(${id},-1)" class="bg-gray-200 w-6 h-6 rounded-lg text-xs font-bold">-</button><span class="text-xs font-bold">${cart[id]}</span><button onclick="ch(${id},1)" class="bg-emerald-600 text-white w-6 h-6 rounded-lg text-xs font-bold">+</button></div></div>;}
             document.getElementById('cartTotal').innerText = fmt(sum);
             document.getElementById('cartModal').classList.remove('hidden');
         }
         
-        function closeCart() { document.getElementById('cartModal').classList.add('hidden'); }
+        function closeCart() { document.getElementById('cartModal'].classList.add('hidden'); }
         
         function ch(id, d) {
             cart[id] = (cart[id] || 0) + d;
